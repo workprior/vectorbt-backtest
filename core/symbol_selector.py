@@ -62,7 +62,7 @@ class SymbolSelector:
 
         return start_ts, end_ts
 
-    def get_top_symbols(self, top_n=100, reverse=False):
+    def get_top_symbols(self, top_n=5, reverse=False):
         """
         Get top (or bottom) N symbols sorted by total monthly volume.
         """

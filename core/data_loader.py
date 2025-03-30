@@ -6,7 +6,8 @@ import hashlib
 import pandas as pd
 from datetime import datetime
 from tqdm import tqdm
-from symbol_selector import SymbolSelector
+from core.symbol_selector import SymbolSelector
+
 
 class DataLoader:
     def __init__(self, symbols=None, interval='1m', year=2025, month='02', market_type='spot'):
