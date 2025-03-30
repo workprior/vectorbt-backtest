@@ -1,0 +1,21 @@
+# Byte-compiled / cache
+__pycache__/
+
+# Virtual environments
+.venv/
+venv/
+
+# IDEs
+.vscode/
+.idea/
+
+# Build
+build/
+dist/
+*.spec
+
+# OS
+.DS_Store
+
+# Logs
+*.log
