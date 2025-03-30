@@ -2,12 +2,14 @@ import os
 import requests
 import zipfile
 import io
+import hashlib
 import pandas as pd
 from datetime import datetime
 from tqdm import tqdm
+from symbol_selector import SymbolSelector
 
 class DataLoader:
-    def __init__(self, symbols, interval='1m', year=2025, month='02', save_path='data/btc_1m_feb25.parquet'):
+    def __init__(self, symbols=None, interval='1m', year=2025, month='02', market_type='spot'):
         """
         Initialize the DataLoader.
 
@@ -15,15 +17,25 @@ class DataLoader:
         :param interval: Timeframe for OHLCV data (e.g., '1m').
         :param year: Year for the data.
         :param month: Month for the data.
-        :param save_path: Path to save the resulting parquet file.
+        :param market_type: Type of market - 'spot' or 'futures'.
         """
         self.symbols = symbols
         self.interval = interval
         self.year = year
         self.month = month
         self.month_str = str(month).zfill(2)
-        self.base_url = "https://data.binance.vision/data/spot/monthly/klines"
-        self.save_path = save_path
+        self.market_type = market_type
+        self.save_path = f"data/{market_type}_{interval}_{self.year}_{self.month_str}.parquet"
+        self.base_url = self._get_base_url()
+        self.symbol_selector = SymbolSelector(interval=self.interval, year=self.year, month=self.month, market_type=self.market_type)
+
+    def _get_base_url(self):
+        if self.market_type == 'futures':
+            return "https://data.binance.vision/data/futures/um/monthly/klines"
+        return "https://data.binance.vision/data/spot/monthly/klines"
+    
+    def get_top_symbols(self):
+        self.symbols = self.symbol_selector.get_top_symbols()
 
     def load_or_get_data(self):
         """
@@ -38,6 +50,7 @@ class DataLoader:
             return df
 
         print("📡 Downloading data from Binance Data Vision...")
+        self.get_top_symbols()
         df = self.download_all_symbols()
 
         if df.empty:
@@ -56,7 +69,8 @@ class DataLoader:
         for symbol in tqdm(self.symbols, desc="📥 Downloading trading pairs"):
             try:
                 df = self.download_symbol_data(symbol)
-                all_data.append(df)
+                if self._validate_data(df):
+                    all_data.append(df)
             except Exception as e:
                 print(f"❌ Skipped {symbol}: {e}")
 
@@ -64,6 +78,41 @@ class DataLoader:
             raise Exception("❌ No data could be downloaded for any symbol")
 
         return pd.concat(all_data, axis=0)
+
+    def _validate_data(self, df: pd.DataFrame) -> bool:
+        """
+        Validate the structure and content of the DataFrame.
+
+        :param df: DataFrame to validate.
+        :return: True if valid, False otherwise.
+        """
+        return not df.empty and {'open', 'high', 'low', 'close', 'volume', 'symbol'}.issubset(df.columns)
+
+    def get_request_url(self, url: str) -> requests.Response:
+        """
+        Send GET request to the given URL and return the response object.
+        Raise an exception if status code is not 200.
+
+        :param url: URL to fetch.
+        :return: Response object.
+        """
+        response = requests.get(url)
+        if response.status_code != 200:
+            raise Exception(f"HTTP {response.status_code} — File not found: {url}")
+        return response
+
+    def checksum_response(self, checksum_response: requests.Response, response: requests.Response, symbol: str):
+        """
+        Validate the SHA256 checksum of the downloaded .zip file.
+
+        :param checksum_response: Response object containing the checksum text.
+        :param response: Original response with .zip binary content.
+        :param symbol: Trading pair symbol for logging.
+        """
+        expected_hash = checksum_response.text.strip().split()[0]
+        actual_hash = hashlib.sha256(response.content).hexdigest()
+        if expected_hash != actual_hash:
+            raise Exception(f"❌ Checksum mismatch for {symbol}: expected {expected_hash}, got {actual_hash}")
 
     def download_symbol_data(self, symbol: str) -> pd.DataFrame:
         """
@@ -74,10 +123,15 @@ class DataLoader:
         """
         file_name = f"{symbol}-{self.interval}-{self.year}-{self.month_str}.zip"
         url = f"{self.base_url}/{symbol}/{self.interval}/{file_name}"
+        checksum_url = f"{url}.CHECKSUM"
 
-        response = requests.get(url)
-        if response.status_code != 200:
-            raise Exception(f"HTTP {response.status_code} — File not found: {url}")
+        response = self.get_request_url(url)
+
+        try:
+            checksum_resp = self.get_request_url(checksum_url)
+            self.checksum_response(checksum_resp, response, symbol)
+        except Exception as e:
+            print(f"⚠️ Skipping checksum validation for {symbol}: {e}")
 
         with zipfile.ZipFile(io.BytesIO(response.content)) as z:
             csv_file = z.namelist()[0]
