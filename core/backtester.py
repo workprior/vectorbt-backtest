@@ -3,7 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from strategies.base import StrategyBase
 from typing import Type
-
+import plotly.io as pio
+import plotly.graph_objects as go
 
 class Backtester:
     """
@@ -38,11 +39,13 @@ class Backtester:
         self.strategy_cls = strategy_cls
         self.price_data = price_data
         self.results_path = results_path
+        self.screenshots_path = os.path.join(self.results_path, 'screenshots')
         self.metrics = []
 
         # Create results directory if it doesn't exist
         os.makedirs(self.results_path, exist_ok=True)
         os.makedirs(os.path.join(self.results_path, 'screenshots'), exist_ok=True)
+
 
     def run(self):
         """
@@ -77,18 +80,9 @@ class Backtester:
             self.metrics.append(metrics)
 
             print(f"Metrics for {symbol} collected")
-
-            # Save equity curve
+            
             pf = strategy.result
-            fig = pf.plot()  # Generate Plotly figure for the equity curve
-
-            # Convert Plotly figure to PNG image (for saving with matplotlib-like functionality)
-            fig_matplotlib = fig.to_image(format="png")
-
-            # Save the equity curve as a PNG file
-            equity_curve_path = os.path.join(self.results_path, 'screenshots', f"{symbol}_{self.strategy_cls.name_strategy}_equity.png")
-            with open(equity_curve_path, 'wb') as f:
-                f.write(fig_matplotlib)
+            pf.plot().write_image(os.path.join(self.screenshots_path, f"{symbol}_{self.strategy_cls.name_strategy}_equity_curve.png"))
 
         # Save all metrics to a CSV file
         df_metrics = pd.DataFrame(self.metrics)
@@ -98,5 +92,4 @@ class Backtester:
         df_metrics.to_csv(metrics_csv_path, index=False)
 
         # Output the collected metrics and confirm the CSV file saving
-        print(df_metrics)
         print(f"📊 Metrics saved to {metrics_csv_path}")

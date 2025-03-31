@@ -27,7 +27,7 @@ class SmaCrossoverStrategy(StrategyBase):
     
     name_strategy = "SMA Crossover"
     
-    def __init__(self, price_data: pd.DataFrame, fast_window=10, slow_window=50):
+    def __init__(self, price_data: pd.DataFrame, fast_window=150, slow_window=250):
         """
         Initialize the SMA Crossover strategy with price data and the SMA window sizes.
 
