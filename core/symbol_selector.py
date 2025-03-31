@@ -3,6 +3,7 @@ from datetime import datetime
 from tqdm import tqdm
 
 
+
 class SymbolSelector:
     def __init__(self, interval="1d", year=2025, month="02", market_type="spot", quote_asset="BTC"):
         """
@@ -86,12 +87,15 @@ class SymbolSelector:
                 data = response.json()
 
                 if isinstance(data, list) and len(data) > 0:
-                    volume_sum = sum(float(entry[5]) for entry in data)  # volume at index 5
+                    volume_sum = sum(float(entry[7]) for entry in data)  # volume at index 5
                     volume_map[symbol] = volume_sum
             except Exception as e:
                 print(f"⚠️ Failed to fetch data for {symbol}: {e}")
 
         sorted_symbols = sorted(volume_map.items(), key=lambda x: x[1], reverse=not reverse)
+
+        for symbol, volume in sorted_symbols:
+            print(f"{symbol}: {volume}")
         self.symbols = [s[0] for s in sorted_symbols[:top_n]]
 
         print(f"✅ Selected top {top_n} symbols based on volume")
