@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from strategies.base import StrategyBase
 from typing import Type
-from metrics import MetricsStatistics
+
 
 class Backtester:
     """
@@ -40,7 +40,7 @@ class Backtester:
         self.screenshots_path = os.path.join(self.results_path, 'screenshots')
         self.metrics = []
 
-        self.metrics_statistics = MetricsStatistics()
+
 
         # Create results directory if it doesn't exist
         os.makedirs(self.results_path, exist_ok=True)
