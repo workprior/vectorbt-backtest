@@ -3,16 +3,17 @@ import vectorbt as vbt
 import vectorbt.indicators as vbtind
 from strategies.base import StrategyBase
 
+
 class RSI_Bollinger_Strategy(StrategyBase):
     """
     RSI with Bollinger Bands Strategy.
-    
-    This strategy generates entry and exit signals based on the RSI indicator 
+
+    This strategy generates entry and exit signals based on the RSI indicator
     combined with Bollinger Bands.
-    
+
     Buy Signal: When RSI < 30 and price is below the lower Bollinger Band.
     Sell Signal: When RSI > 70 and price is above the upper Bollinger Band.
-    
+
     Attributes:
     -----------
     rsi_period : int
@@ -28,11 +29,11 @@ class RSI_Bollinger_Strategy(StrategyBase):
     """
 
     name_strategy = "RSI and Bollinger Bands"
-    
+
     def __init__(self, price_data: pd.DataFrame, rsi_period=14, bb_period=20, bb_std=2):
         """
         Initializes the RSI and Bollinger Bands strategy with price data and indicator parameters.
-        
+
         Parameters:
         -----------
         price_data : pd.DataFrame
@@ -52,21 +53,21 @@ class RSI_Bollinger_Strategy(StrategyBase):
     def generate_signals(self) -> pd.DataFrame:
         """
         Generates entry and exit signals based on RSI and Bollinger Bands.
-        
+
         The strategy generates:
         - `entries`: True when RSI < 30 and price is below the lower Bollinger Band.
         - `exits`: True when RSI > 70 and price is above the upper Bollinger Band.
-        
+
         Returns:
         --------
         pd.DataFrame
             A DataFrame with 'entry' and 'exit' columns containing boolean values for each bar.
         """
-        close = self.price_data['close']
-        
+        close = self.price_data["close"]
+
         # Calculate RSI and Bollinger Bands
         rsi = vbtind.RSI.run(close, window=self.rsi_period).rsi
-        bb = vbtind.BBANDS.run(close, window=self.bb_period, window_dev=self.bb_std)
+        bb = vbtind.BBANDS.run(close, window=self.bb_period)
         bb_upper = bb.upper
         bb_lower = bb.lower
 
@@ -74,6 +75,6 @@ class RSI_Bollinger_Strategy(StrategyBase):
         entries = (rsi < 30) & (close < bb_lower)
         exits = (rsi > 70) & (close > bb_upper)
 
-        self.signals = {'entries': entries, 'exits': exits}
-        
-        return pd.DataFrame({'entry': entries, 'exit': exits}, index=close.index)
+        self.signals = {"entries": entries, "exits": exits}
+
+        return pd.DataFrame({"entry": entries, "exit": exits}, index=close.index)

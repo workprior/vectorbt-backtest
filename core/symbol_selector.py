@@ -3,9 +3,15 @@ from datetime import datetime
 from tqdm import tqdm
 
 
-
 class SymbolSelector:
-    def __init__(self, interval="1d", year=2025, month="02", market_type="spot", quote_asset="BTC"):
+    def __init__(
+        self,
+        interval="1d",
+        year=2025,
+        month="02",
+        market_type="spot",
+        quote_asset="BTC",
+    ):
         """
         Initialize SymbolSelector instance.
         """
@@ -43,8 +49,9 @@ class SymbolSelector:
         exchange_info = response.json()
 
         return [
-            s['symbol'] for s in exchange_info['symbols']
-            if s['quoteAsset'] == self.quote_asset and s['status'] == 'TRADING'
+            s["symbol"]
+            for s in exchange_info["symbols"]
+            if s["quoteAsset"] == self.quote_asset and s["status"] == "TRADING"
         ]
 
     def _get_time_range(self):
@@ -80,19 +87,23 @@ class SymbolSelector:
                     "interval": self.interval,
                     "startTime": start_ts,
                     "endTime": end_ts,
-                    "limit": 1000
+                    "limit": 1000,
                 }
                 response = requests.get(self.base_url, params=params)
                 response.raise_for_status()
                 data = response.json()
 
                 if isinstance(data, list) and len(data) > 0:
-                    volume_sum = sum(float(entry[7]) for entry in data)  # volume at index 5
+                    volume_sum = sum(
+                        float(entry[7]) for entry in data
+                    )  # volume at index 5
                     volume_map[symbol] = volume_sum
             except Exception as e:
                 print(f"⚠️ Failed to fetch data for {symbol}: {e}")
 
-        sorted_symbols = sorted(volume_map.items(), key=lambda x: x[1], reverse=not reverse)
+        sorted_symbols = sorted(
+            volume_map.items(), key=lambda x: x[1], reverse=not reverse
+        )
 
         for symbol, volume in sorted_symbols:
             print(f"{symbol}: {volume}")

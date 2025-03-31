@@ -10,7 +10,14 @@ from core.symbol_selector import SymbolSelector
 
 
 class DataLoader:
-    def __init__(self, symbols=None, interval='1m', year=2025, month='02', market_type='spot'):
+    def __init__(
+        self,
+        symbols=None,
+        interval="1m",
+        year=2025,
+        month="02",
+        market_type="spot",
+    ):
         """
         Initialize the DataLoader.
 
@@ -26,19 +33,26 @@ class DataLoader:
         self.month = month
         self.month_str = str(month).zfill(2)
         self.market_type = market_type
-        self.save_path = f"data/{market_type}_{interval}_{self.year}_{self.month_str}.parquet"
+        self.save_path = (
+            f"data/{market_type}_{interval}_{self.year}_{self.month_str}.parquet"
+        )
         self.base_url = self._get_base_url()
-        self.symbol_selector = SymbolSelector(interval=self.interval, year=self.year, month=self.month, market_type=self.market_type)
+        self.symbol_selector = SymbolSelector(
+            interval=self.interval,
+            year=self.year,
+            month=self.month,
+            market_type=self.market_type,
+        )
 
     def _get_base_url(self):
-        if self.market_type == 'futures':
+        if self.market_type == "futures":
             return "https://data.binance.vision/data/futures/um/monthly/klines"
         return "https://data.binance.vision/data/spot/monthly/klines"
-    
-    def get_top_symbols(self):
-        self.symbols = self.symbol_selector.get_top_symbols()
 
-    def load_or_get_data(self):
+    def get_top_symbols(self, num_symbols, reverse=False):
+        self.symbols = self.symbol_selector.get_top_symbols(num_symbols, reverse)
+
+    def load_or_get_data(self, num_symbols=100):
         """
         Load cached data if available, otherwise download and save new data.
 
@@ -51,7 +65,7 @@ class DataLoader:
             return df
 
         print("📡 Downloading data from Binance Data Vision...")
-        self.get_top_symbols()
+        self.get_top_symbols(num_symbols)
         df = self.download_all_symbols()
 
         if df.empty:
@@ -87,7 +101,14 @@ class DataLoader:
         :param df: DataFrame to validate.
         :return: True if valid, False otherwise.
         """
-        return not df.empty and {'open', 'high', 'low', 'close', 'volume', 'symbol'}.issubset(df.columns)
+        return not df.empty and {
+            "open",
+            "high",
+            "low",
+            "close",
+            "volume",
+            "symbol",
+        }.issubset(df.columns)
 
     def get_request_url(self, url: str) -> requests.Response:
         """
@@ -102,7 +123,12 @@ class DataLoader:
             raise Exception(f"HTTP {response.status_code} — File not found: {url}")
         return response
 
-    def checksum_response(self, checksum_response: requests.Response, response: requests.Response, symbol: str):
+    def checksum_response(
+        self,
+        checksum_response: requests.Response,
+        response: requests.Response,
+        symbol: str,
+    ):
         """
         Validate the SHA256 checksum of the downloaded .zip file.
 
@@ -113,7 +139,9 @@ class DataLoader:
         expected_hash = checksum_response.text.strip().split()[0]
         actual_hash = hashlib.sha256(response.content).hexdigest()
         if expected_hash != actual_hash:
-            raise Exception(f"❌ Checksum mismatch for {symbol}: expected {expected_hash}, got {actual_hash}")
+            raise Exception(
+                f"❌ Checksum mismatch for {symbol}: expected {expected_hash}, got {actual_hash}"
+            )
 
     def download_symbol_data(self, symbol: str) -> pd.DataFrame:
         """
@@ -144,11 +172,22 @@ class DataLoader:
 
         df = df.iloc[:, :12]  # keep only the first 12 columns
 
-        df.columns = ['timestamp', 'open', 'high', 'low', 'close', 'volume',
-                      'close_time', 'quote_volume', 'num_trades',
-                      'taker_base_vol', 'taker_quote_vol', 'ignore']
+        df.columns = [
+            "timestamp",
+            "open",
+            "high",
+            "low",
+            "close",
+            "volume",
+            "close_time",
+            "quote_volume",
+            "num_trades",
+            "taker_base_vol",
+            "taker_quote_vol",
+            "ignore",
+        ]
 
-        ts = df['timestamp'].astype("int64")
+        ts = df["timestamp"].astype("int64")
 
         if ts.max() > 1e17:
             print(f"⚠️ Fixing timestamp for {symbol}: nanoseconds → ms")
@@ -160,11 +199,11 @@ class DataLoader:
             print(f"⚠️ Fixing timestamp for {symbol}: seconds → ms")
             ts = ts * 1000
 
-        df['timestamp'] = pd.to_datetime(ts, unit='ms')
-        df.set_index('timestamp', inplace=True)
-        df['symbol'] = symbol
+        df["timestamp"] = pd.to_datetime(ts, unit="ms")
+        df.set_index("timestamp", inplace=True)
+        df["symbol"] = symbol
 
-        return df[['open', 'high', 'low', 'close', 'volume', 'symbol']]
+        return df[["open", "high", "low", "close", "volume", "symbol"]]
 
     def save_to_parquet(self, df: pd.DataFrame):
         """
@@ -174,13 +213,13 @@ class DataLoader:
         """
         print("💾 Saving data to .parquet file")
 
-        if 'timestamp' in df.columns:
-            df['timestamp'] = pd.to_datetime(df['timestamp'])
-            df.set_index('timestamp', inplace=True)
+        if "timestamp" in df.columns:
+            df["timestamp"] = pd.to_datetime(df["timestamp"])
+            df.set_index("timestamp", inplace=True)
 
-        if df.index.name != 'timestamp':
+        if df.index.name != "timestamp":
             raise Exception("❌ 'timestamp' is not set as index")
 
         print(f"✅ Index before saving: {df.index.name}, type: {df.index.dtype}")
-        df.to_parquet(self.save_path, compression='gzip', index=True)
+        df.to_parquet(self.save_path, compression="gzip", index=True)
         print(f"📁 File saved to {self.save_path}")

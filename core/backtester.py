@@ -21,7 +21,12 @@ class Backtester:
         List that stores the metrics for each backtest.
     """
 
-    def __init__(self, strategy_cls: Type[StrategyBase], price_data: pd.DataFrame, results_path='results/'):
+    def __init__(
+        self,
+        strategy_cls: Type[StrategyBase],
+        price_data: pd.DataFrame,
+        results_path="results/",
+    ):
         """
         Initializes the Backtester with the given strategy, price data, and results directory.
 
@@ -37,34 +42,31 @@ class Backtester:
         self.strategy_cls = strategy_cls
         self.price_data = price_data
         self.results_path = results_path
-        self.screenshots_path = os.path.join(self.results_path, 'screenshots')
+        self.screenshots_path = os.path.join(self.results_path, "screenshots")
         self.metrics = []
-
-
 
         # Create results directory if it doesn't exist
         os.makedirs(self.results_path, exist_ok=True)
-        os.makedirs(os.path.join(self.results_path, 'screenshots'), exist_ok=True)
-
+        os.makedirs(os.path.join(self.results_path, "screenshots"), exist_ok=True)
 
     def run(self):
         """
         Run backtest on each symbol and collect stats and charts.
-        
-        This method loops through all unique symbols in the provided price data, 
+
+        This method loops through all unique symbols in the provided price data,
         applies the strategy, and collects the metrics and equity curve for each symbol.
 
-        After running the backtests for all symbols, it saves the metrics to a CSV 
+        After running the backtests for all symbols, it saves the metrics to a CSV
         file and the equity curves to PNG files.
         """
-        symbols = self.price_data['symbol'].unique()
+        symbols = self.price_data["symbol"].unique()
 
         # Loop over each symbol to run the backtest
         for symbol in symbols:
             print(f"🚀 Running backtest for {symbol}...")
 
             # Filter data for the current symbol
-            symbol_data = self.price_data[self.price_data['symbol'] == symbol].copy()
+            symbol_data = self.price_data[self.price_data["symbol"] == symbol].copy()
 
             # Initialize the strategy
             strategy = self.strategy_cls(symbol_data)
@@ -75,20 +77,37 @@ class Backtester:
 
             # Collect metrics and add symbol and strategy name
             metrics = strategy.get_metrics()
-            metrics['symbol'] = symbol
-            metrics['strategy_name'] = self.strategy_cls.name_strategy
+            metrics["symbol"] = symbol
+            metrics["strategy_name"] = self.strategy_cls.name_strategy
             self.metrics.append(metrics)
 
             print(f"Metrics for {symbol} collected")
-            
+
             pf = strategy.result
-            pf.plot().write_image(os.path.join(self.screenshots_path, f"{symbol}_{self.strategy_cls.name_strategy}_equity_curve.png"))
+            pf.plot().write_image(
+                os.path.join(
+                    self.screenshots_path,
+                    f"{symbol}_{self.strategy_cls.name_strategy}_equity_curve.png",
+                )
+            )
 
         # Save all metrics to a CSV file
         df_metrics = pd.DataFrame(self.metrics)
-        df_metrics = df_metrics[['symbol', 'strategy_name', 'Total Return [%]', 'Sharpe Ratio', 'Max Drawdown [%]',
-                                 'Win Rate [%]', 'Expectancy', 'Exposure Time [%]']]  # Ordered columns for CSV
-        metrics_csv_path = os.path.join(self.results_path, f"{self.strategy_cls.name_strategy}_metrics.csv")
+        df_metrics = df_metrics[
+            [
+                "symbol",
+                "strategy_name",
+                "Total Return [%]",
+                "Sharpe Ratio",
+                "Max Drawdown [%]",
+                "Win Rate [%]",
+                "Expectancy",
+                "Exposure Time [%]",
+            ]
+        ]  # Ordered columns for CSV
+        metrics_csv_path = os.path.join(
+            self.results_path, f"{self.strategy_cls.name_strategy}_metrics.csv"
+        )
         df_metrics.to_csv(metrics_csv_path, index=False)
 
         # Output the collected metrics and confirm the CSV file saving

@@ -3,3 +3,5 @@ requests>=2.32.0
 tqdm>=4.66.0
 pyarrow>=19.0.1
 kaleido==0.1.0.post1
+numpy==2.1.0
+

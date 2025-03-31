@@ -5,7 +5,7 @@ import pandas as pd
 
 
 class MetricsStatistics:
-    def __init__(self, metrics_path='results/', statistic_path='results/statistic/'):
+    def __init__(self, metrics_path="results/", statistic_path="results/statistic/"):
         """
         Initializes the MetricsStatistics class for collecting and visualizing metrics.
 
@@ -22,7 +22,7 @@ class MetricsStatistics:
 
     def load_all_metrics(self):
         """
-        Loads all CSV files containing metrics from the `metrics_path` directory, 
+        Loads all CSV files containing metrics from the `metrics_path` directory,
         and combines them into a single DataFrame.
 
         :return: A pandas DataFrame containing all the combined metrics.
@@ -31,7 +31,7 @@ class MetricsStatistics:
 
         # Loop through all files in the metrics directory
         for file_name in os.listdir(self.metrics_path):
-            if file_name.endswith('.csv'):
+            if file_name.endswith(".csv"):
                 file_path = os.path.join(self.metrics_path, file_name)
 
                 # Load CSV file into DataFrame
@@ -55,32 +55,38 @@ class MetricsStatistics:
         fig = go.Figure()
 
         # Process each strategy
-        for strategy_name in metrics_df['strategy_name'].unique():
-            strategy_data = metrics_df[metrics_df['strategy_name'] == strategy_name]
+        for strategy_name in metrics_df["strategy_name"].unique():
+            strategy_data = metrics_df[metrics_df["strategy_name"] == strategy_name]
 
             # Check if the necessary column is present
-            if 'Total Return [%]' not in strategy_data.columns:
-                print(f"Warning: 'Total Return [%]' not found for strategy {strategy_name}")
+            if "Total Return [%]" not in strategy_data.columns:
+                print(
+                    f"Warning: 'Total Return [%]' not found for strategy {strategy_name}"
+                )
                 continue
 
             # Add trace for equity curve of each strategy
-            fig.add_trace(go.Scatter(
-                x=strategy_data['symbol'],
-                y=strategy_data['Total Return [%]'],
-                mode='lines',
-                name=f"{strategy_name} Equity Curve"
-            ))
+            fig.add_trace(
+                go.Scatter(
+                    x=strategy_data["symbol"],
+                    y=strategy_data["Total Return [%]"],
+                    mode="lines",
+                    name=f"{strategy_name} Equity Curve",
+                )
+            )
 
         # Update layout for the plot
         fig.update_layout(
             title="Equity Curve for All Strategies",
             xaxis_title="Symbol",
             yaxis_title="Total Return [%]",
-            showlegend=True
+            showlegend=True,
         )
 
         # Save the plot to a file
-        fig.write_image(os.path.join(self.statistic_path, "equity_curve_all_strategies.png"))
+        fig.write_image(
+            os.path.join(self.statistic_path, "equity_curve_all_strategies.png")
+        )
         return fig.to_html(full_html=False)
 
     def plot_heatmap(self, metrics_df):
@@ -91,24 +97,28 @@ class MetricsStatistics:
         :return: HTML representation of the heatmap plot.
         """
         # Check if necessary column is present for creating the heatmap
-        if 'Total Return [%]' not in metrics_df.columns:
+        if "Total Return [%]" not in metrics_df.columns:
             print("Error: 'Total Return [%]' not found in data.")
             return
 
         # Create the heatmap data pivot table
-        heatmap_data = metrics_df.pivot(index='symbol', columns='strategy_name', values='Win Rate [%]')
+        heatmap_data = metrics_df.pivot(
+            index="symbol", columns="strategy_name", values="Win Rate [%]"
+        )
 
         # Create heatmap using plotly.express
-        fig = px.imshow(heatmap_data,
-                        labels={'x': "Strategy", 'y': "Symbol"},
-                        title="Performance Heatmap for All Strategies and Pairs")
+        fig = px.imshow(
+            heatmap_data,
+            labels={"x": "Strategy", "y": "Symbol"},
+            title="Performance Heatmap for All Strategies and Pairs",
+        )
 
         # Update layout for the heatmap
         fig.update_layout(
             width=1200,
             height=800,
-            xaxis={'side': 'top'},  # Place strategies at the top
-            coloraxis_colorbar=dict(title="Win Rate [%]")  # Color bar legend
+            xaxis={"side": "top"},  # Place strategies at the top
+            coloraxis_colorbar=dict(title="Win Rate [%]"),  # Color bar legend
         )
 
         # Save the heatmap
@@ -117,13 +127,18 @@ class MetricsStatistics:
 
     def plot_metrics_comparison(self, metrics_df):
         """
-        Builds and saves comparison plots for various metrics, such as Sharpe Ratio, Max Drawdown, 
+        Builds and saves comparison plots for various metrics, such as Sharpe Ratio, Max Drawdown,
         Expectancy, and Exposure Time for all strategies and pairs.
 
         :param metrics_df: A DataFrame containing the metrics to plot.
         :return: HTML content with the comparison plots.
         """
-        metrics = ['Sharpe Ratio', 'Max Drawdown [%]', 'Expectancy', 'Exposure Time [%]']
+        metrics = [
+            "Sharpe Ratio",
+            "Max Drawdown [%]",
+            "Expectancy",
+            "Exposure Time [%]",
+        ]
         html_content = ""
 
         # Loop through each metric
@@ -136,27 +151,31 @@ class MetricsStatistics:
             fig = go.Figure()
 
             # Loop through each strategy
-            for strategy_name in metrics_df['strategy_name'].unique():
-                strategy_data = metrics_df[metrics_df['strategy_name'] == strategy_name]
+            for strategy_name in metrics_df["strategy_name"].unique():
+                strategy_data = metrics_df[metrics_df["strategy_name"] == strategy_name]
 
                 # Add trace for each strategy and its metric
-                fig.add_trace(go.Scatter(
-                    x=strategy_data['symbol'],
-                    y=strategy_data[metric],
-                    mode='lines',
-                    name=f"{strategy_name} {metric}"
-                ))
+                fig.add_trace(
+                    go.Scatter(
+                        x=strategy_data["symbol"],
+                        y=strategy_data[metric],
+                        mode="lines",
+                        name=f"{strategy_name} {metric}",
+                    )
+                )
 
             # Update layout for the plot
             fig.update_layout(
                 title=f"{metric} for All Strategies",
                 xaxis_title="Symbol",
                 yaxis_title=metric,
-                showlegend=True
+                showlegend=True,
             )
 
             # Save the plot and append to HTML content
-            fig.write_image(os.path.join(self.statistic_path, f"{metric}_all_strategies.png"))
+            fig.write_image(
+                os.path.join(self.statistic_path, f"{metric}_all_strategies.png")
+            )
             html_content += f"<h3>{metric}</h3>{fig.to_html(full_html=False)}<br>"
 
         return html_content
@@ -184,7 +203,7 @@ class MetricsStatistics:
 
         # Save the HTML report
         report_file = os.path.join(self.statistic_path, "metrics_report.html")
-        with open(report_file, 'w', encoding='utf-8') as f:
+        with open(report_file, "w", encoding="utf-8") as f:
             f.write(html_content)
 
         print(f"HTML report generated: {report_file}")
