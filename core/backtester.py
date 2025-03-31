@@ -1,10 +1,8 @@
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
 from strategies.base import StrategyBase
 from typing import Type
-import plotly.io as pio
-import plotly.graph_objects as go
+from metrics import MetricsStatistics
 
 class Backtester:
     """
@@ -41,6 +39,8 @@ class Backtester:
         self.results_path = results_path
         self.screenshots_path = os.path.join(self.results_path, 'screenshots')
         self.metrics = []
+
+        self.metrics_statistics = MetricsStatistics()
 
         # Create results directory if it doesn't exist
         os.makedirs(self.results_path, exist_ok=True)
@@ -88,7 +88,7 @@ class Backtester:
         df_metrics = pd.DataFrame(self.metrics)
         df_metrics = df_metrics[['symbol', 'strategy_name', 'Total Return [%]', 'Sharpe Ratio', 'Max Drawdown [%]',
                                  'Win Rate [%]', 'Expectancy', 'Exposure Time [%]']]  # Ordered columns for CSV
-        metrics_csv_path = os.path.join(self.results_path, 'metrics.csv')
+        metrics_csv_path = os.path.join(self.results_path, f"{self.strategy_cls.name_strategy}_metrics.csv")
         df_metrics.to_csv(metrics_csv_path, index=False)
 
         # Output the collected metrics and confirm the CSV file saving
